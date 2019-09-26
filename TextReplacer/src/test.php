@@ -4,6 +4,8 @@ namespace TextReplacer;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+/*
+
 $dictionary = [
 	'fuck',
 ];
@@ -12,7 +14,6 @@ $string = 'I\'m fucking genius and I don\'t give a fuck';
 
 $replacement = '*';
 
-/*
 use \TextReplacer\BadWordsTextReplacer;
 
 $badWordsReplacer = new BadWordsTextReplacer();
@@ -38,11 +39,7 @@ function replace_dirty_words(String $text, array $bad_words)
 	//
 	$badWordsReplacer = new BadWordsTextReplacer();
 
-	$dictionary = [
-		'fuck',
-	];
-
-	$badWordsReplacer->setDictionary($dictionary);
+	$badWordsReplacer->setDictionary($bad_words);
 
 	$string = 'I\'m fucking genius and I don\'t give a fuck';
 
@@ -57,5 +54,11 @@ function replace_dirty_words(String $text, array $bad_words)
 	return $string;
 }
 
-$string = replace_dirty_words($string, $dictionary);
+$string = 'I\'m fucking genius and I don\'t give a fuck';
+
+$bad_words = [
+	'fuck',
+];
+
+$string = replace_dirty_words($string, $bad_words);
 var_dump($string);
