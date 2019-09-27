@@ -41,9 +41,7 @@ function replace_dirty_words(String $text, array $bad_words)
 
 	$badWordsReplacer->setDictionary($bad_words);
 
-	$string = 'I\'m fucking genius and I don\'t give a fuck';
-
-	$badWordsReplacer->setText($string);
+	$badWordsReplacer->setText($text);
 
 	$replacement = '*';
 
