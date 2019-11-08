@@ -3,13 +3,12 @@
 /**
  * 
  */
-namespace TextReplacer;
+			namespace TextReplacer;
 
 /**
  * abstract class for Text replacement
  */
-abstract class TextReplacer
-{
+abstract class TextReplacer {
     /**
      * do the actual job which will be implemented by specific classes
      * 
