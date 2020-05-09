@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+  "name": "Twitch auto redeem points",
+  "version": "1.0",
+  "description": "Twitch auto redeem points",
+  "content_scripts": [
+    {
+      "matches": ["*://*.twitch.tv/*"],
+      "js": ["/src/clicker.js"]
+    }
+  ],
+  "background": {
+    "scripts": ["/src/background.js"]
+  },
+  "permissions": [
+    "*://*.twitch.tv/*",
+      "tabs",
+      "storage",
+      "notifications"
+  ]
+}

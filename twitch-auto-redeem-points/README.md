@@ -1,0 +1,1 @@
+Simple Twitch bonus points redeemer
