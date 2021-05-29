@@ -1,4 +1,4 @@
-var inteval = 10000;
+var interval = 10000;
 var elements = null;
 
 setInterval(function() {
@@ -7,8 +7,8 @@ setInterval(function() {
         return;
     }
 
-    buttons = elements.querySelectorAll("button.tw-button--success:not([hidden])");
+    buttons = elements.querySelectorAll("[aria-label^='Claim Bonus']:not([hidden])");
     buttons.forEach(element => {
         element.click();
     });
-}, inteval);
+}, interval);
