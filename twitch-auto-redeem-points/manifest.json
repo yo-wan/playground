@@ -1,21 +1,41 @@
 {
-  "manifest_version": 2,
-  "name": "Twitch auto redeem points",
-  "version": "1.0",
-  "description": "Twitch auto redeem points",
+  "manifest_version": 3,
+  "name": "Twitch Auto Redeem Points",
+  "version": "1.0.0",
+  "description": "Automatically claims Twitch channel points bonus",
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": "icons/icon128.png",
+    "default_title": "Twitch Auto Redeem Points"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "irh755@gmail.com"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ],
   "content_scripts": [
     {
       "matches": ["*://*.twitch.tv/*"],
-      "js": ["/src/clicker.js"]
+      "js": ["src/clicker.js", "src/options.js"]
     }
   ],
   "background": {
-    "scripts": ["/src/background.js"]
+    "service_worker": "src/background.js",
+    "scripts": ["src/background.js"]
   },
-  "permissions": [
-    "*://*.twitch.tv/*",
-      "tabs",
-      "storage",
-      "notifications"
-  ]
+  "host_permissions": [
+    "*://*.twitch.tv/*"
+  ],
+  "options_ui": {
+    "page": "/src/options.html",
+    "open_in_tab": true
+  }
 }
