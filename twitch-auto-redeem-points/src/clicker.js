@@ -1,14 +1,32 @@
-var interval = 10000;
-var elements = null;
+let isClaiming = false;
 
-setInterval(function() {
-    elements = document.querySelector("div.community-points-summary");
-    if (!elements) {
-        return;
-    }
+function clickClaimButtonWhenVisible() {
+    const observer = new MutationObserver(() => {
+		const button = document.querySelector("[aria-label^='Claim Bonus']");
 
-    buttons = elements.querySelectorAll("[aria-label^='Claim Bonus']:not([hidden])");
-    buttons.forEach(element => {
-        element.click();
+		if (button && isVisible(button) && !isClaiming) {
+			isClaiming = true;
+			
+			button.click();
+			setTimeout(() => {
+				isClaiming = false;
+			}, 2000);
+		}
     });
-}, interval);
+  
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+}
+  
+function isVisible(el) {
+	const style = window.getComputedStyle(el);
+	return el.offsetParent !== null && style.visibility !== "hidden" && style.display !== "none";
+}
+
+clickClaimButtonWhenVisible();
+
+module.exports = { clickClaimButtonWhenVisible, isVisible };
