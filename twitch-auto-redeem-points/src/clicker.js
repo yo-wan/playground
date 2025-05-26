@@ -28,5 +28,3 @@ function isVisible(el) {
 }
 
 clickClaimButtonWhenVisible();
-
-module.exports = { clickClaimButtonWhenVisible, isVisible };
