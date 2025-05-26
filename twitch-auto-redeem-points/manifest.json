@@ -12,7 +12,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "twitch-auto-redeem-points-yowan"
+      "id": "irh755@gmail.com"
     }
   },
   "permissions": [
@@ -28,14 +28,14 @@
     }
   ],
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "src/background.js",
+    "scripts": ["src/background.js"]
   },
   "host_permissions": [
     "*://*.twitch.tv/*"
   ],
   "options_ui": {
     "page": "/src/options.html",
-    "open_in_tab": true,
-    "browser_style": true
+    "open_in_tab": true
   }
 }

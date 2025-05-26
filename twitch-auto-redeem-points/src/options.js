@@ -1,8 +1,6 @@
 chrome.storage.sync.get(null, (data) => {
 	const tbody = document.querySelector("#statsTable tbody");
 
-	console.log(4, data)
-
 	let allPoints = 0;
 	Object.entries(data).forEach(([channel, points]) => {
 		if (channel.indexOf('twitch.tv') >= 0) {

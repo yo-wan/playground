@@ -15,5 +15,8 @@
     "setupFiles": [
       "./jest.setup.js"
     ]
+  },
+  "dependencies": {
+    "web-ext": "^8.7.1"
   }
 }
