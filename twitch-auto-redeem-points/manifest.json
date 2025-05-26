@@ -10,15 +10,21 @@
     "default_icon": "icons/icon128.png",
     "default_title": "Twitch Auto Redeem Points"
   },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "twitch-auto-redeem-points-yowan"
+    }
+  },
   "permissions": [
     "activeTab",
     "scripting",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "content_scripts": [
     {
       "matches": ["*://*.twitch.tv/*"],
-      "js": ["src/clicker.js"]
+      "js": ["src/clicker.js", "src/options.js"]
     }
   ],
   "background": {
@@ -26,5 +32,10 @@
   },
   "host_permissions": [
     "*://*.twitch.tv/*"
-  ]
+  ],
+  "options_ui": {
+    "page": "/src/options.html",
+    "open_in_tab": true,
+    "browser_style": true
+  }
 }
