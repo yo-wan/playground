@@ -9,20 +9,20 @@ chrome.storage.sync.get(null, (data) => {
 			const row = document.createElement("tr");
 
 			const channelLink = document.createElement('a');
-			channelLink.innerHTML = twitchChannel;
+			channelLink.textContent = twitchChannel;
 			channelLink.setAttribute('href', channel);
 
 			const nameCell = document.createElement("td");
 			nameCell.appendChild(channelLink)
 
 			const pointsCell = document.createElement("td");
-			pointsCell.textContent = points.toLocaleString();
+			pointsCell.textContent = (Number(points) || 0).toLocaleString();
 
 			row.appendChild(nameCell);
 			row.appendChild(pointsCell);
 			tbody.appendChild(row);
 
-			allPoints += Number(points);
+			allPoints += Number(points) || 0;
 		}
 	});
 
