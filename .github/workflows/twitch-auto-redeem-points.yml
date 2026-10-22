@@ -1,0 +1,28 @@
+name: twitch-auto-redeem-points tests
+
+on:
+  pull_request:
+    paths:
+      - "twitch-auto-redeem-points/**"
+      - ".github/workflows/twitch-auto-redeem-points.yml"
+  push:
+    branches: [master]
+    paths:
+      - "twitch-auto-redeem-points/**"
+      - ".github/workflows/twitch-auto-redeem-points.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: twitch-auto-redeem-points
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: twitch-auto-redeem-points/package-lock.json
+      - run: npm ci
+      - run: npm test
