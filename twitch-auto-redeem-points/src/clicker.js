@@ -1,26 +1,52 @@
 let isClaiming = false;
+// Set when the bonus was clicked and we're waiting for Twitch to show the "+N" label
+let pendingClaim = null;
+
+// How long to wait for the "+N" label after a click before giving up
+const PENDING_CLAIM_TIMEOUT_MS = 30000;
 
 function clickClaimButtonWhenVisible() {
     const observer = new MutationObserver(() => {
+		// Use DOM mutations rather than timers to spot the label: background tabs
+		// throttle timers to once a second (or once a minute), so polling missed it
+		if (pendingClaim) {
+			collectPendingClaim();
+			return;
+		}
+
 		const button = document.querySelector("[aria-label^='Claim Bonus']");
 		if (button && isVisible(button) && !isClaiming) {
 			isClaiming = true;
 
+			// Remember the channel at click time in case the user navigates away
+			pendingClaim = { key: getChannelKey(), expiresAt: Date.now() + PENDING_CLAIM_TIMEOUT_MS };
 			button.click();
-			saveStatistics()
-				.catch(error => console.log(error))
-				.finally(() => {
-					isClaiming = false;
-				});
 		}
     });
   
     observer.observe(document.body, {
       childList: true,
       subtree: true,
+      characterData: true,
       attributes: true,
       attributeFilter: ["style", "class"],
     });
+}
+
+function collectPendingClaim() {
+	const addedPoints = readAddedPoints();
+	if (addedPoints > 0) {
+		const { key } = pendingClaim;
+		pendingClaim = null;
+		saveStatistics(key, addedPoints)
+			.catch(error => console.log(error))
+			.finally(() => {
+				isClaiming = false;
+			});
+	} else if (Date.now() > pendingClaim.expiresAt) {
+		pendingClaim = null;
+		isClaiming = false;
+	}
 }
   
 function isVisible(el) {
@@ -29,16 +55,9 @@ function isVisible(el) {
 }
 
 // Twitch shows a "+50" style label next to the balance for a few seconds after a claim
-async function getAddedPoints(retries = 10, delay = 300) {
-	for (let i = 0; i < retries; i++) {
-		const el = document.querySelector('.community-points-summary__points-add-text');
-		const points = el ? Number(el.textContent.replace(/[^\d]/g, '')) : 0;
-		if (points > 0) {
-			return points;
-		}
-		await new Promise(resolve => setTimeout(resolve, delay));
-	}
-	return 0;
+function readAddedPoints() {
+	const el = document.querySelector('.community-points-summary__points-add-text');
+	return el ? Number(el.textContent.replace(/[^\d]/g, '')) : 0;
 }
 
 // Normalize the page URL to https://www.twitch.tv/<channel> so query strings,
@@ -49,14 +68,8 @@ function getChannelKey() {
 	return channel ? `https://www.twitch.tv/${channel.toLowerCase()}` : null;
 }
 
-async function saveStatistics() {
-	const key = getChannelKey();
-	if (!key) {
-		return;
-	}
-
-	const addedPoints = await getAddedPoints();
-	if (!addedPoints) {
+async function saveStatistics(key, addedPoints) {
+	if (!key || !addedPoints) {
 		return;
 	}
 
@@ -71,5 +84,5 @@ clickClaimButtonWhenVisible();
 
 // Content scripts have no `module`; this only runs under Jest
 if (typeof module !== 'undefined' && module.exports) {
-	module.exports = { clickClaimButtonWhenVisible, isVisible, getAddedPoints, getChannelKey, saveStatistics };
+	module.exports = { clickClaimButtonWhenVisible, isVisible, readAddedPoints, getChannelKey, saveStatistics };
 }

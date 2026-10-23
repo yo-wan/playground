@@ -105,35 +105,25 @@ describe('getChannelKey', () => {
     });
 });
 
-describe('getAddedPoints', () => {
-    let getAddedPoints;
+describe('readAddedPoints', () => {
+    let readAddedPoints;
 
     beforeEach(() => {
-        ({ getAddedPoints } = loadClicker());
+        ({ readAddedPoints } = loadClicker());
     });
 
-    test('parses the "+N" label', async () => {
+    test('parses the "+N" label', () => {
         addPointsLabel('+50');
-        await expect(getAddedPoints()).resolves.toBe(50);
+        expect(readAddedPoints()).toBe(50);
     });
 
-    test('parses labels with thousands separators', async () => {
+    test('parses labels with thousands separators', () => {
         addPointsLabel('+1,000');
-        await expect(getAddedPoints()).resolves.toBe(1000);
+        expect(readAddedPoints()).toBe(1000);
     });
 
-    test('waits for the label to appear', async () => {
-        const promise = getAddedPoints();
-        await jest.advanceTimersByTimeAsync(600);
-        addPointsLabel('+60');
-        await jest.advanceTimersByTimeAsync(300);
-        await expect(promise).resolves.toBe(60);
-    });
-
-    test('returns 0 if the label never appears', async () => {
-        const promise = getAddedPoints();
-        await jest.advanceTimersByTimeAsync(3000);
-        await expect(promise).resolves.toBe(0);
+    test('returns 0 when there is no label', () => {
+        expect(readAddedPoints()).toBe(0);
     });
 });
 
@@ -146,59 +136,82 @@ describe('saveStatistics', () => {
     });
 
     test('stores points for a channel with no saved total', async () => {
-        addPointsLabel('+50');
-        await saveStatistics();
+        await saveStatistics(key, 50);
         expect(global.chromeStore[key]).toBe(50);
     });
 
     test('adds to an existing total', async () => {
         global.chromeStore[key] = 100;
-        addPointsLabel('+50');
-        await saveStatistics();
+        await saveStatistics(key, 50);
         expect(global.chromeStore[key]).toBe(150);
     });
 
     test('recovers from a corrupted (null) total', async () => {
         global.chromeStore[key] = null;
-        addPointsLabel('+50');
-        await saveStatistics();
+        await saveStatistics(key, 50);
         expect(global.chromeStore[key]).toBe(50);
     });
 
-    test('saves under the normalized channel key', async () => {
-        setPath('/popout/SomeChannel/chat?x=1');
-        addPointsLabel('+50');
-        await saveStatistics();
-        expect(global.chromeStore).toEqual({ [key]: 50 });
+    test('keeps channels separate', async () => {
+        await saveStatistics('https://www.twitch.tv/alpha', 50);
+        await saveStatistics('https://www.twitch.tv/beta', 60);
+        expect(global.chromeStore).toEqual({
+            'https://www.twitch.tv/alpha': 50,
+            'https://www.twitch.tv/beta': 60,
+        });
     });
 
-    test('does not save when no points label is found', async () => {
-        const promise = saveStatistics();
-        await jest.advanceTimersByTimeAsync(3000);
-        await promise;
-        expect(chrome.storage.sync.set).not.toHaveBeenCalled();
-    });
-
-    test('does not save outside a channel page', async () => {
-        setPath('/');
-        addPointsLabel('+50');
-        await saveStatistics();
+    test('does not save without a channel or points', async () => {
+        await saveStatistics(null, 50);
+        await saveStatistics(key, 0);
         expect(chrome.storage.sync.set).not.toHaveBeenCalled();
     });
 });
 
 describe('claim button observer', () => {
-    test('clicks a visible claim button and records the points', async () => {
+    const key = 'https://www.twitch.tv/somechannel';
+
+    test('clicks a visible claim button and records the points once the label appears', async () => {
         loadClicker();
         const button = addClaimButton();
         const clickSpy = jest.spyOn(button, 'click');
-        addPointsLabel('+50');
 
+        latestObserver().callback();
+        expect(clickSpy).toHaveBeenCalledTimes(1);
+
+        // Twitch renders the label after the claim request completes
+        addPointsLabel('+50');
         latestObserver().callback();
         await flushPromises();
 
-        expect(clickSpy).toHaveBeenCalledTimes(1);
-        expect(global.chromeStore['https://www.twitch.tv/somechannel']).toBe(50);
+        expect(global.chromeStore[key]).toBe(50);
+    });
+
+    test('records points without relying on timers (background tabs)', async () => {
+        loadClicker();
+        addClaimButton();
+
+        latestObserver().callback();
+        addPointsLabel('+50');
+        latestObserver().callback();
+        await flushPromises();
+
+        // No timers were advanced, yet the claim was saved
+        expect(global.chromeStore[key]).toBe(50);
+    });
+
+    test('saves under the channel that was open when the bonus was clicked', async () => {
+        setPath('/popout/SomeChannel/chat');
+        loadClicker();
+        addClaimButton();
+
+        latestObserver().callback();
+        setPath('/otherchannel');
+        addPointsLabel('+50');
+        latestObserver().callback();
+        await flushPromises();
+
+        expect(global.chromeStore).toEqual({ [key]: 50 });
     });
 
     test('ignores a hidden claim button', () => {
@@ -218,20 +231,43 @@ describe('claim button observer', () => {
         expect(chrome.storage.sync.set).not.toHaveBeenCalled();
     });
 
-    test('does not click again while a claim is being saved', async () => {
+    test('does not click again while waiting for the label', () => {
         loadClicker();
         const button = addClaimButton();
         const clickSpy = jest.spyOn(button, 'click');
 
-        // No label yet, so saveStatistics keeps retrying
         latestObserver().callback();
         latestObserver().callback();
-        expect(clickSpy).toHaveBeenCalledTimes(1);
 
-        // Once the save gives up, the next mutation can claim again
-        await jest.advanceTimersByTimeAsync(3000);
+        expect(clickSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('can claim again after the points are saved', async () => {
+        loadClicker();
+        const button = addClaimButton();
+        const clickSpy = jest.spyOn(button, 'click');
+
+        latestObserver().callback();
+        const label = addPointsLabel('+50');
+        latestObserver().callback();
         await flushPromises();
+        label.remove();
+
         latestObserver().callback();
         expect(clickSpy).toHaveBeenCalledTimes(2);
+    });
+
+    test('gives up waiting for the label after the timeout', () => {
+        loadClicker();
+        const button = addClaimButton();
+        const clickSpy = jest.spyOn(button, 'click');
+
+        latestObserver().callback();
+        jest.setSystemTime(Date.now() + 31000);
+        latestObserver().callback(); // expires the pending claim
+        latestObserver().callback(); // clicks again
+
+        expect(clickSpy).toHaveBeenCalledTimes(2);
+        expect(chrome.storage.sync.set).not.toHaveBeenCalled();
     });
 });
